@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гайд — Meria QuickMenu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        #cursorGlow {
+            position: fixed; pointer-events: none; z-index: 9999;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,217,102,0.4), transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: width 0.15s, height 0.15s, opacity 0.15s; opacity: 0;
+        }
+        .sparkle {
+            position: fixed; pointer-events: none; z-index: 9998;
+            width: 6px; height: 6px; background: #ffd966; border-radius: 50%;
+            box-shadow: 0 0 6px 2px rgba(255,217,102,0.6);
+            animation: sparkleFade 0.6s ease-out forwards;
+        }
+        @keyframes sparkleFade {
+            0% { opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: scale(0.2) rotate(180deg); }
+        }
+        .star {
+            position: fixed; pointer-events: none; z-index: 9998;
+            color: #ffd966; font-size: 10px;
+            animation: starFloat 0.8s ease-out forwards;
+        }
+        @keyframes starFloat {
+            0% { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx),var(--ty)) scale(0); }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh; padding: 20px;
+            background: transparent; position: relative; overflow-x: hidden;
+        }
+        .bg-gradient {
+            position: fixed; inset: 0; z-index: -1;
+            background: linear-gradient(-45deg, #061a1a, #0d2c2c, #0a2f3a, #0a2a2a, #061a1a);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        body::before, body::after {
+            content: ''; position: fixed; border-radius: 50%; filter: blur(80px);
+            z-index: -1; pointer-events: none;
+        }
+        body::before {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(42,107,107,0.12), transparent 70%);
+            top: -100px; right: -100px;
+            animation: orbFloat 15s ease-in-out infinite alternate;
+        }
+        body::after {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(255,217,102,0.06), transparent 70%);
+            bottom: -80px; left: -80px;
+            animation: orbFloat 12s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes orbFloat {
+            0% { transform: translate(0,0) scale(1); }
+            100% { transform: translate(60px,40px) scale(1.2); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseOpacity {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            position: relative; z-index: 1; max-width: 900px; width: 100%;
+            margin: 40px auto;
+            background: rgba(13,44,44,0.55);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 24px; padding: 40px 50px;
+            border: 1px solid rgba(255,217,102,0.08);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: fadeInUp 0.8s ease-out both;
+        }
+
+        h1 {
+            text-align: center; font-size: 32px; font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffd966, #ffe699, #b8e6d6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center; font-size: 14px; color: rgba(184,230,214,0.6);
+            margin-bottom: 35px; animation: pulseOpacity 3s ease-in-out infinite;
+        }
+
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 8px;
+            background: rgba(42,107,107,0.3); backdrop-filter: blur(4px);
+            color: #b8e6d6; text-decoration: none; font-size: 13px; font-weight: 600;
+            border: 1px solid rgba(42,107,107,0.2);
+            transition: all 0.25s ease; margin-bottom: 30px;
+        }
+        .back-btn:hover {
+            background: rgba(42,107,107,0.5); border-color: rgba(255,217,102,0.3);
+            transform: translateY(-1px); box-shadow: 0 4px 15px rgba(42,107,107,0.2);
+        }
+
+        .guide-section {
+            margin-bottom: 40px;
+        }
+        .guide-section h2 {
+            font-size: 22px; font-weight: 600; color: #ffd966;
+            margin-bottom: 16px; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,217,102,0.15);
+        }
+        .guide-section p, .guide-section li {
+            font-size: 15px; line-height: 1.7; color: rgba(189,212,204,0.85);
+        }
+        .guide-section ul, .guide-section ol {
+            padding-left: 22px; margin: 10px 0;
+        }
+        .guide-section li { margin-bottom: 6px; }
+        .guide-section .highlight {
+            background: rgba(255,217,102,0.08); border-left: 3px solid #ffd966;
+            padding: 14px 18px; border-radius: 0 10px 10px 0;
+            margin: 15px 0; color: rgba(189,212,204,0.85);
+        }
+        .guide-section code {
+            background: rgba(255,217,102,0.1); padding: 2px 8px; border-radius: 4px;
+            font-family: 'Courier New', monospace; font-size: 13px; color: #ffd966;
+        }
+
+        .step-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,217,102,0.06);
+            border-radius: 12px; padding: 18px 22px; margin-bottom: 14px;
+            transition: all 0.25s ease;
+        }
+        .step-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,217,102,0.15);
+            transform: translateX(4px);
+        }
+        .step-card .step-num {
+            display: inline-block;
+            background: rgba(255,217,102,0.15); color: #ffd966;
+            font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .step-card h3 {
+            font-size: 16px; color: #b8e6d6; margin-bottom: 6px;
+        }
+        .step-card .step-img {
+            margin-top: 12px; width: 100%; border-radius: 8px;
+            border: 1px solid rgba(255,217,102,0.1);
+            display: block; max-width: 100%;
+        }
+
+        .placeholder-img {
+            background: rgba(255,217,102,0.05); border: 2px dashed rgba(255,217,102,0.2);
+            border-radius: 12px; padding: 40px; text-align: center;
+            color: rgba(255,217,102,0.3); font-size: 14px; margin: 15px 0;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(13,44,44,0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,217,102,0.2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,217,102,0.4); }
+
+        @media (max-width: 640px) {
+            .container { padding: 20px; margin: 20px auto; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <a href="index.html" class="back-btn">← На главную</a>
+        <h1>Гайд по QuickMenu</h1>
+        <div class="subtitle">Пошаговое руководство по настройке и использованию</div>
+
+        <div class="guide-section">
+            <h2>Введение</h2>
+            <p>Тут будет описание принципа работы QuickMenu и генератора.</p>
+        </div>
+
+        <div class="guide-section" id="setup">
+            <h2>1. Установка QuickMenu</h2>
+            <div class="step-card">
+                <span class="step-num">Шаг 1</span>
+                <h3>Заполните поля и скачайте файл</h3>
+                <p>На главной странице заполните все данные и нажмите «Скачать quickmenu_data.json».</p>
+                <img src="гайд-1.png" alt="Скачивание файла" class="step-img">
+            </div>
+            <div class="step-card">
+                <span class="step-num">Шаг 2</span>
+                <h3>Зайдите в лаунчер RPM (или любой другой)</h3>
+                <p>Откройте лаунчер, через который вы заходите на сервер.</p>
+                <img src="гайд-2.png" alt="Лаунчер" class="step-img">
+            </div>
+            <div class="step-card">
+                <span class="step-num">Шаг 3</span>
+                <h3>Зайдите в настройки лаунчера</h3>
+                <p>Найдите раздел настроек вашего лаунчера.</p>
+                <img src="гайд-3.png" alt="Настройки лаунчера" class="step-img">
+            </div>
+            <div class="step-card">
+                <span class="step-num">Шаг 4</span>
+                <h3>Зайдите в папку игры</h3>
+                <p>В настройках лаунчера найдите кнопку «Открыть папку игры» или «Open Game Directory».</p>
+                <img src="гайд-4.png" alt="Папка игры" class="step-img">
+            </div>
+            <div class="step-card">
+                <span class="step-num">Шаг 5</span>
+                <h3>Зайдите в папку config и закиньте файл</h3>
+                <p>Скопируйте скачанный <code>quickmenu_data.json</code> в папку <code>config</code> вашей игры.</p>
+                <img src="гайд-5.png" alt="Папка config" class="step-img">
+            </div>
+            <div class="step-card">
+                <span class="step-num">Готово!</span>
+                <h3>Заходите и играйте</h3>
+                <p>Файл установлен — QuickMenu будет работать на сервере.</p>
+            </div>
+        </div>
+
+        <div class="guide-section">
+            <h2>Нашли баг?</h2>
+            <p>Пишите мне в Discord: <code>Yumi_loom</code> или в Telegram: <code>NanomiYT</code></p>
+        </div>
+    </div>
+
+    <script>
+        const cursorGlow = document.createElement('div');
+        cursorGlow.id = 'cursorGlow';
+        document.body.appendChild(cursorGlow);
+
+        let mouseX = -100, mouseY = -100;
+        let lastX = -100, lastY = -100;
+        let sparkleTimer = 0;
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX; mouseY = e.clientY;
+            cursorGlow.style.left = mouseX + 'px';
+            cursorGlow.style.top = mouseY + 'px';
+            cursorGlow.style.opacity = '1';
+            const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
+            if (dist > 6) {
+                lastX = mouseX; lastY = mouseY;
+                createSparkle(mouseX, mouseY);
+                if (Math.random() > 0.6) createStar(mouseX, mouseY);
+            }
+            clearTimeout(sparkleTimer);
+            sparkleTimer = setTimeout(() => { cursorGlow.style.opacity = '0'; }, 2000);
+        });
+        document.addEventListener('mouseleave', function() { cursorGlow.style.opacity = '0'; });
+
+        function createSparkle(x, y) {
+            const s = document.createElement('div');
+            s.className = 'sparkle';
+            const size = 3 + Math.random() * 5;
+            s.style.width = size + 'px'; s.style.height = size + 'px';
+            s.style.left = (x + (Math.random() - 0.5) * 14) + 'px';
+            s.style.top = (y + (Math.random() - 0.5) * 14) + 'px';
+            s.style.background = ['#ffd966','#ffe699','#fff4cc','#b8e6d6'][Math.floor(Math.random() * 4)];
+            s.style.boxShadow = `0 0 ${4+size}px 2px ${s.style.background.replace(')',',0.4)').replace('rgb','rgba')}`;
+            document.body.appendChild(s);
+            setTimeout(() => s.remove(), 600);
+        }
+        function createStar(x, y) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.textContent = '+';
+            s.style.fontWeight = 'bold';
+            s.style.left = x + 'px'; s.style.top = y + 'px';
+            s.style.setProperty('--tx', (Math.random() - 0.5) * 40 + 'px');
+            s.style.setProperty('--ty', (Math.random() - 0.5) * 40 + 'px');
+            s.style.color = ['#ffd966','#ffe699','#fff4cc'][Math.floor(Math.random() * 3)];
+            s.style.fontSize = (10 + Math.random() * 10) + 'px';
+            document.body.appendChild(s);
+            setTimeout(() => s.remove(), 800);
+        }
+    </script>
+</body>
+</html>

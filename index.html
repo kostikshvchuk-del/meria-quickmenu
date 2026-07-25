@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meria QuickMenu Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+
+        #cursorGlow {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,217,102,0.4), transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: width 0.15s, height 0.15s, opacity 0.15s;
+            opacity: 0;
+        }
+
+        .sparkle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            width: 6px;
+            height: 6px;
+            background: #ffd966;
+            border-radius: 50%;
+            box-shadow: 0 0 6px 2px rgba(255,217,102,0.6);
+            animation: sparkleFade 0.6s ease-out forwards;
+        }
+
+        @keyframes sparkleFade {
+            0% { opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: scale(0.2) rotate(180deg); }
+        }
+
+        .star {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            color: #ffd966;
+            font-size: 10px;
+            animation: starFloat 0.8s ease-out forwards;
+        }
+
+        @keyframes starFloat {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body::before {
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 215, 100, 0.12);
+            top: -100px;
+            left: -100px;
+            animation: floatA 12s ease-in-out infinite alternate;
+        }
+
+        body::after {
+            width: 400px;
+            height: 400px;
+            background: rgba(42, 107, 107, 0.25);
+            bottom: -80px;
+            right: -80px;
+            animation: floatB 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(-45deg, #061a1a, #0d2c2c, #0a2f3a, #0a2a2a, #061a1a);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        @keyframes floatA {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(200px, 120px) scale(1.3); }
+        }
+
+        @keyframes floatB {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-180px, -100px) scale(1.2); }
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes borderPulse {
+            0%, 100% { border-color: rgba(42, 107, 107, 0.35); }
+            50% { border-color: rgba(255, 217, 102, 0.15); }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 217, 102, 0.15); }
+            50% { text-shadow: 0 0 40px rgba(255, 217, 102, 0.3), 0 0 80px rgba(255, 217, 102, 0.1); }
+        }
+
+        @keyframes textShimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes pulseOpacity {
+            0%, 100% { opacity: 0.65; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes flashGreen {
+            0% { background: rgba(58, 140, 107, 0.2); }
+            100% { background: rgba(3, 21, 21, 0.7); }
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 217, 102, 0); }
+            50% { box-shadow: 0 0 0 3px rgba(255, 217, 102, 0.08); }
+        }
+
+        @keyframes charAppear {
+            0% { opacity: 0; transform: translateY(8px) scale(0.8); filter: blur(4px); color: #ffd966; }
+            50% { color: #b8e6d6; }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); color: #e6f7f0; }
+        }
+
+        @keyframes inputGlowRipple {
+            0% { box-shadow: 0 0 0 0 rgba(255, 217, 102, 0.3); }
+            100% { box-shadow: 0 0 0 6px rgba(255, 217, 102, 0); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(13, 44, 44, 0.55);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(42, 107, 107, 0.35);
+            animation: fadeInUp 0.7s ease-out, borderPulse 4s ease-in-out infinite 0.7s;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 30px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, #ffd966, #ffe699, #ffd966, #f0c040, #ffd966);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.7s 0.1s ease-out both, glowPulse 3s ease-in-out infinite 0.8s, textShimmer 6s linear infinite 0.8s;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(127, 170, 159, 0.85);
+            margin-bottom: 35px;
+            font-size: 14px;
+            letter-spacing: 1px;
+            animation: fadeInUp 0.7s 0.15s ease-out both, pulseOpacity 3s ease-in-out infinite 1s;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.2s; }
+        .form-group:nth-child(2) { animation-delay: 0.25s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.35s; }
+
+        .form-group.important {
+            background: linear-gradient(135deg, rgba(255,217,102,0.06), rgba(255,217,102,0.02));
+            border: 1px solid rgba(255,217,102,0.15);
+            border-left: 3px solid #ffd966;
+            border-radius: 0 12px 12px 0;
+            padding: 14px 16px 6px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .form-group.important::after {
+            content: '*';
+            color: #ffd966; font-size: 18px;
+            position: absolute; top: 8px; right: 12px;
+            opacity: 0.4; animation: pulseOpacity 2s ease-in-out infinite;
+        }
+        .form-group.important label {
+            color: #ffe699;
+        }
+        .form-group.important:hover {
+            border-color: rgba(255,217,102,0.3);
+            background: linear-gradient(135deg, rgba(255,217,102,0.1), rgba(255,217,102,0.03));
+        }
+
+        label {
+            display: block;
+            color: #ffd966;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            animation: pulseOpacity 4s ease-in-out infinite 0.5s;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-visual {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 13px 14px;
+            border-radius: 10px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 1px;
+            color: #e6f7f0;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            white-space: pre;
+            overflow: hidden;
+        }
+
+        .input-visual .char {
+            display: inline-block;
+            animation: charAppear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .input-visual .char.space {
+            min-width: 0.3em;
+        }
+
+        .input-visual .char.placeholder {
+            color: rgba(143, 187, 170, 0.45);
+        }
+
+        .input-visual .cursor-blink {
+            display: inline-block;
+            width: 1.5px;
+            height: 1em;
+            background: #ffd966;
+            margin-left: 1px;
+            animation: blink 0.8s step-end infinite;
+            opacity: 0;
+        }
+
+        .input-wrapper:focus-within .cursor-blink {
+            opacity: 1;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px 14px;
+            background: rgba(26, 58, 58, 0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(42, 107, 107, 0.4);
+            border-radius: 10px;
+            color: #e6f7f0;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        input.animated-input {
+            color: transparent;
+            caret-color: transparent;
+        }
+
+        input::placeholder {
+            color: rgba(143, 187, 170, 0.4);
+        }
+
+        input.animated-input::placeholder {
+            color: transparent;
+        }
+
+        input:hover, select:hover {
+            border-color: rgba(42, 107, 107, 0.7);
+            background: rgba(26, 58, 58, 0.65);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        input:focus, select:focus {
+            border-color: #ffd966;
+            background: rgba(31, 69, 69, 0.7);
+            box-shadow: 0 0 0 3px rgba(255, 217, 102, 0.1), 0 0 25px rgba(255, 217, 102, 0.08);
+            transform: translateY(-1px);
+        }
+
+        input.ripple {
+            animation: inputGlowRipple 0.3s ease-out;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffd966' d='M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+            color: #e6f7f0;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        select option {
+            background: #0d2c2c;
+            color: #e6f7f0;
+        }
+
+        #departmentFields {
+            overflow: hidden;
+            max-height: 300px;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+
+        #departmentFields.hidden {
+            max-height: 0;
+            opacity: 0;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            animation: fadeInUp 0.7s 0.35s ease-out both;
+        }
+
+        button {
+            position: relative;
+            overflow: hidden;
+            border: none;
+            padding: 13px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            transition: left 0.6s;
+            pointer-events: none;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+            pointer-events: none;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, #ffd966, #f0c040);
+            color: #0a2a2a;
+            box-shadow: 0 4px 20px rgba(255, 217, 102, 0.25);
+            animation: glowPulse 3s ease-in-out infinite 2s;
+        }
+
+        button.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(255, 217, 102, 0.4);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #3a8c6b, #2e7a5a);
+            color: white;
+            box-shadow: 0 4px 20px rgba(58, 140, 107, 0.25);
+        }
+
+        button.success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(58, 140, 107, 0.4);
+        }
+
+        button.secondary {
+            background: rgba(42, 107, 107, 0.4);
+            backdrop-filter: blur(4px);
+            color: #ffd966;
+            border: 1px solid rgba(42, 107, 107, 0.3);
+        }
+
+        button.secondary:hover {
+            background: rgba(31, 85, 85, 0.6);
+            border-color: rgba(255, 217, 102, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .output-section {
+            margin-top: 30px;
+            background: rgba(7, 32, 32, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(42, 107, 107, 0.3);
+            animation: fadeInUp 0.7s 0.4s ease-out both;
+            transition: all 0.3s;
+        }
+
+        .output-section:hover {
+            border-color: rgba(42, 107, 107, 0.5);
+            box-shadow: 0 0 30px rgba(42, 107, 107, 0.05);
+        }
+
+        .output-section h3 {
+            color: #ffd966;
+            margin-bottom: 15px;
+            font-size: 17px;
+            letter-spacing: 0.5px;
+            animation: pulseOpacity 4s ease-in-out infinite 1.5s;
+        }
+
+        pre {
+            background: rgba(3, 21, 21, 0.7);
+            padding: 18px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 11px;
+            color: #8fbbaa;
+            font-family: 'Monaco', 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid rgba(42, 107, 107, 0.15);
+            transition: all 0.3s;
+        }
+
+        pre.flash {
+            animation: flashGreen 0.6s ease-out;
+        }
+
+        .info {
+            background: rgba(26, 58, 58, 0.4);
+            backdrop-filter: blur(4px);
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #bdd4cc;
+            border-left: 3px solid #ffd966;
+            line-height: 1.5;
+            animation: borderGlow 3s ease-in-out infinite 2.5s;
+        }
+
+        .note {
+            font-size: 12px;
+            color: rgba(143, 187, 170, 0.65);
+            margin-top: 6px;
+            padding-left: 2px;
+            animation: pulseOpacity 5s ease-in-out infinite 1s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(42, 74, 107, 0.3);
+            color: rgba(127, 168, 201, 0.6);
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.7;
+            animation: fadeInUp 0.7s 0.45s ease-out both;
+        }
+
+        .footer div {
+            animation: pulseOpacity 6s ease-in-out infinite 3s;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 21, 21, 0.3);
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(42, 107, 107, 0.5);
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(42, 107, 107, 0.8);
+        }
+
+        ::selection {
+            background: rgba(255, 217, 102, 0.25);
+            color: #fff;
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .container { padding: 24px 18px; }
+            .row { grid-template-columns: 1fr; }
+            h1 { font-size: 22px; letter-spacing: 1px; }
+            button { min-width: 140px; padding: 12px 18px; font-size: 14px; }
+            .btn-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="container">
+        <h1>MERIA QUICKMENU GENERATOR</h1>
+        <div class="subtitle">Заполните данные для генерации QuickMenu</div>
+
+        <div style="text-align: center; margin-bottom: 25px; animation: fadeInUp 0.7s 0.18s ease-out both;">
+            <a href="гайд.html" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 8px; background: rgba(42,107,107,0.3); backdrop-filter: blur(4px); color: #b8e6d6; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid rgba(42,107,107,0.2); transition: all 0.25s ease;">
+                Гайд по использованию
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Пол</label>
+                <select id="gender">
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                </select>
+            </div>
+            <div class="form-group important">
+                <label>Имя и Фамилия</label>
+                <div class="input-wrapper">
+                    <div class="input-visual" id="visual-rpName"><span class="cursor-blink"></span></div>
+                    <input type="text" id="rpName" class="animated-input" placeholder="Криштиану Роналду">
+                </div>
+            </div>
+            <div class="form-group important">
+                <label>Должность</label>
+                <select id="position">
+                    <option value="Водитель">Водитель</option>
+                    <option value="Телохранитель">Телохранитель</option>
+                    <option value="Секретарь">Секретарь</option>
+                    <option value="Председатель">Председатель</option>
+                    <option value="Адвокат">Адвокат</option>
+                    <option value="Судья">Судья</option>
+                    <option value="Вице-Губернатор">Вице-Губернатор</option>
+                    <option value="Губернатор">Губернатор</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group important">
+                <label>Отдел</label>
+                <select id="department">
+                    <option value="ОКО">ОКО (Отдел Контроля Организации)</option>
+                    <option value="PEDF">PEDF (Professional Education and Development Forum)</option>
+                    <option value="Отсутствует">Отсутствует</option>
+                </select>
+                <div class="note" id="departmentDesc">Выберите отдел, чтобы увидеть описание.</div>
+            </div>
+            <div class="form-group">
+                <label>Дата выдачи</label>
+                <input type="date" id="issueDate">
+            </div>
+        </div>
+
+        <div id="departmentFields">
+            <div class="row">
+                <div class="form-group">
+                    <label>Должность в отделе</label>
+                    <div class="input-wrapper">
+                        <div class="input-visual" id="visual-positionInDepartment"><span class="cursor-blink"></span></div>
+                        <input type="text" id="positionInDepartment" class="animated-input" placeholder="Сотрудник">
+                    </div>
+                    <div class="note">Ваша должность внутри отдела</div>
+                </div>
+                <div class="form-group">
+                    <label>Подпись Главы Отдела</label>
+                    <div class="input-wrapper">
+                        <div class="input-visual" id="visual-headSign"><span class="cursor-blink"></span></div>
+                        <input type="text" id="headSign" class="animated-input" placeholder="bAd">
+                    </div>
+                    <div class="note">Подпись руководителя вашего отдела</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Подпись Губернатора</label>
+            <div class="input-wrapper">
+                <div class="input-visual" id="visual-governorSign"><span class="cursor-blink"></span></div>
+                <input type="text" id="governorSign" class="animated-input" placeholder="MRFY" value="MRFY">
+            </div>
+            <div class="note">Никнейм или подпись губернатора</div>
+        </div>
+
+        <div class="btn-group">
+            <button class="primary" onclick="generateAndCopy(event)">Сгенерировать и скопировать</button>
+            <button class="success" onclick="downloadJSON()">Скачать quickmenu_data.json</button>
+            <button class="secondary" onclick="resetForm()">Сбросить</button>
+        </div>
+
+        <div class="output-section">
+            <h3>Сгенерированный JSON:</h3>
+            <pre id="jsonOutput">// Заполните форму и нажмите кнопку</pre>
+            <div class="info">
+                <strong>Инструкция:</strong> После генерации JSON автоматически скопируется в буфер обмена.<br>
+                Вставьте содержимое в файл <strong>quickmenu_data.json</strong> в папке с клиентом Minecraft.
+            </div>
+        </div>
+        <div class="footer">
+            <div>Создатель: kiralis29 | Yumi_loom | Юки Дримурр</div>
+            <div>Сделано при поддержке RPM-ROLEPLAY</div>
+        </div>
+    </div>
+
+    <script>
+        const departmentSelect = document.getElementById('department');
+        const departmentFields = document.getElementById('departmentFields');
+        const departmentDesc = document.getElementById('departmentDesc');
+
+        const departmentDescriptions = {
+            "ОКО": "ОКО (Отдел Контроля Организации) — контроль соблюдения правил Устава и поведения внутри фракции.",
+            "PEDF": "PEDF (Professional Education and Development Forum) — отдел обучения состава как в РП, так и в уставе."
+        };
+
+        function toggleDepartmentFields() {
+            const desc = departmentDescriptions[departmentSelect.value] || '';
+            if (departmentDesc) departmentDesc.textContent = desc || 'Выберите отдел, чтобы увидеть описание.';
+
+            if (departmentSelect.value === 'Отсутствует') {
+                departmentFields.classList.add('hidden');
+            } else {
+                departmentFields.classList.remove('hidden');
+            }
+        }
+
+        departmentSelect.addEventListener('change', toggleDepartmentFields);
+        toggleDepartmentFields();
+
+        const animatedInputs = ['rpName', 'positionInDepartment', 'headSign', 'governorSign'];
+        const prevValues = {};
+
+        function renderAnimatedText(inputId, oldText, newText) {
+            const input = document.getElementById(inputId);
+            const visual = document.getElementById('visual-' + inputId);
+            const text = newText || input.value;
+            const placeholder = input.placeholder || '';
+
+            const isPlaceholder = text.length === 0;
+            const displayText = text.length > 0 ? text : placeholder;
+            const wasEmpty = !oldText || oldText.length === 0;
+
+            let addedIndex = -1;
+            if (oldText === undefined) {
+                addedIndex = 0;
+            } else if (!wasEmpty && oldText && newText && newText.length > oldText.length) {
+                for (let i = 0; i < newText.length; i++) {
+                    if (i >= oldText.length || newText[i] !== oldText[i]) {
+                        addedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            let html = '';
+            const isInitial = oldText === undefined;
+            if (isPlaceholder) {
+                html += '<span class="cursor-blink"></span>';
+            }
+            for (let i = 0; i < displayText.length; i++) {
+                const ch = displayText[i];
+                const isNew = (isInitial || (!isPlaceholder && addedIndex >= 0 && i >= addedIndex));
+                const cls = isPlaceholder ? 'char placeholder' : 'char';
+                const animDelay = isNew ? `${(i - addedIndex) * 0.035}s` : '0s';
+                const animDuration = isNew ? '0.35s' : '0s';
+                const anim = isNew ? `charAppear ${animDuration} cubic-bezier(0.34, 1.56, 0.64, 1) ${animDelay} both` : 'none';
+                html += `<span class="${cls}" style="${isNew ? `animation:${anim}` : 'animation:none;opacity:1;transform:none;filter:none'}">${ch === ' ' ? '&nbsp;' : ch}</span>`;
+            }
+            if (!isPlaceholder) {
+                html += '<span class="cursor-blink"></span>';
+            }
+            visual.innerHTML = html;
+        }
+
+        animatedInputs.forEach(id => {
+            const input = document.getElementById(id);
+            prevValues[id] = input.value;
+            renderAnimatedText(id);
+            input.addEventListener('input', function() {
+                const prev = prevValues[id] || '';
+                renderAnimatedText(id, prev, this.value);
+                prevValues[id] = this.value;
+                this.classList.remove('ripple');
+                void this.offsetWidth;
+                this.classList.add('ripple');
+            });
+        });
+
+        function generateJSON() {
+            const rpName = document.getElementById('rpName').value || "Криштиану Роналду";
+            const position = document.getElementById('position').value;
+            const department = document.getElementById('department').value;
+            const governorSign = document.getElementById('governorSign').value || "bAd";
+            const positionInDepartment = document.getElementById('positionInDepartment').value || "Сотрудник";
+            const headSign = document.getElementById('headSign').value || "bAd";
+            const gender = document.getElementById('gender').value;
+
+            const meText = gender === 'female'
+                ? "/me достав удостоверение из внутреннего кармана пиджака, продемонстрировала его человеку напротив, убедившись что человек напротив изучил информацию, убрала его обратно в нагрудный карман."
+                : "/me достав удостоверение из внутреннего кармана пиджака, продемонстрировал его человеку напротив, убедившись что человек напротив изучил информацию убрал его обратно в нагрудный карман.";
+
+            const issueDateRaw = document.getElementById('issueDate').value;
+            let issueDate = issueDateRaw;
+            if (!issueDate) {
+                const today = new Date();
+                issueDate = today.toLocaleDateString('ru-RU').replace(/\//g, '.');
+            } else {
+                issueDate = issueDateRaw.split('-').reverse().join('.');
+            }
+
+            let template = [
+                {"name":"vrc","actions":[["cmd","/vrc"]],"icon":"porting_lib:area_selector","customModelData":0,"keybind":[]},
+                {"name":"/sit","actions":[["cmd","/sit"]],"icon":"minecraft:polished_blackstone_stairs","customModelData":0,"keybind":[]},
+                {"name":"приветствие","actions":[[`cmd`,`Здравствуйте, меня зовут ${rpName}.`],["cmd","Чем могу помочь?"]],"icon":"minecraft:emerald","customModelData":0,"keybind":[]},
+                {"name":"бейджик","actions":[[`cmd`,`Здравствуйте, я ${rpName}.`],[`cmd`,`/do На пиджаке висит бейджик с текстом « ${position} Правительства ${rpName} »`],["cmd","Могу ли я Вам чем-нибудь помочь?"],],"icon":"minecraft:name_tag","customModelData":0,"keybind":[]},
+                {"name":"удостоверение","actions":[[`cmd`,`Здравствуйте, я ${position}, ${rpName}`],["cmd", meText],[`cmd`,`/do Информация в удостоверении: ИФ: ${rpName} | Фотография сотрудника 3x4 | Организация: Правительство | Должность: ${position} | Дата Выдачи: ${issueDate} | Подпись Губернатора: ${governorSign} | Штамп MERIA`],[`cmd`,`/do Информация на другой стороне: Отдел: ${department} | Должность: ${positionInDepartment} | Подпись главы отдела: ${headSign}`]],"icon":"minecraft:paper","customModelData":0,"keybind":[]},
+                {"name":"паспорт","actions":[[`cmd`,`Здравствуйте, я сотрудник отдела ${department} ${rpName}, покажите мне ваш паспорт на проверку`]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
+                {"name":"цельвизита","actions":[[`cmd`,`Здравствуйте, Я, ${rpName}, ${position} правительства. Занимаюсь охраной мэрии. Представьтесь пожалуйста.`],[`cmd`,`И скажите какова ваша цель визита в здание правительства?`]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
+                {"name":"документы","actions":[["cmd","Предъявите пожалуйста на проверку ваш паспорт."]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
+                {"name":"сила","actions":[["cmd","Извините, но я обязан применить силу."],["cmd","/me быстро подойдя к человеку начал его захват. Быстрыми и тактичными действиями скручивает человека."],["cmd","/do Человек на полу. Руки гражданина зафиксированны за спине"]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
+                {"name":"вернутьдоки","actions":[["cmd","/me возвращает документы человеку напротив."]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
+                {"name":"порядок","actions":[["cmd","Гражданин, прошу вас не нарушать порядок мэрии и покинуть здание."]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
+                {"name":"выдачапаспорта","actions":[[`cmd`,`Здравствуйте. Меня зовут ${rpName}. Сейчас, я вам выдам бланк. Заполните в полях имя и фамилию с заглавной буквы.`],["cmd","/n РП имя и фамилия должно быть на русском языке, без матов, без оскорблений, без нижнего подчёркивания, имя и Фамилия начинаются с заглавной буквы."],["cmd","/todo Забрав бланк из ящика и положив его на стол : заполните все поля"]],"icon":"minecraft:writable_book","customModelData":0,"keybind":[]},
+                {"name":"подтвердить","actions":[["cmd","/me убедившись что бланк заполнен верно ставит печать, вбивает данные в планшет, после чего печатает паспорт и ставит печать мэрии в паспорте."],["cmd","/todo Передав паспорт гражданину : ваш паспорт готов, держите, приятного вам прибывание в штате РПМ"],["cmd","/n Чтобы посмотреть паспорт введите команду /pass, чтобы показать паспорт кому-то нажмите курсором в чате {Показать Паспорт}, если он у вас просят"]],"icon":"minecraft:written_book","customModelData":0,"keybind":[]},
+                {"name":"отклонить","actions":[["cmd","/me убедившись что бланк заполнен неверно выкидывает бланк, тянется за новым бланком к ящику."],["cmd","/todo Забрав бланк из ящика и положив его на стол : заполните все поля снова, я не могу принять, тот бланк"],["cmd","/n РП имя и фамилия должно быть на русском языке, без матов, без оскорблений, без нижнего подчёркивания, имя и Фамилия начинаются с заглавной буквы."]],"icon":"minecraft:knowledge_book","customModelData":0,"keybind":[]},
+                {"name":"сменитьпаспорт","actions":[["cmd","/me взял документы из рук гражданина, положил в тумбочку старый паспорт, после чего взял бланк на смену паспорта с рук гражданина и изменил в базе данных на планшете, а затем распечатал и передал новый паспорт гражданину предварительно поставив печать."]],"icon":"minecraft:book","customModelData":0,"keybind":[]},
+                {"name":"билборд","actions":[["cmd","/me достал плакат из сумки и начал вешать на пустой биллборд."],["cmd","/billboard"],["cmd","/do Рекламный плакат висит ровно"]],"icon":"minecraft:painting","customModelData":0,"keybind":[]},
+                {"name":"ценыудо","actions":[["cmd","Цена условно досрочного освобождения зависит от уровня розыска с которым вы попали в КПЗ и количества вашей законопослушности."],["cmd","Первый уровень розыска -> 7.000$"],["cmd","Второй уровень розыска -> 14.000$"],["cmd","Третий уровень розыска -> 42.000$"],["cmd","Четвертый уровень розыска -> 84.000$"],["cmd","Пятый уровень розыска -> 105.000$"],["cmd","Каждую минуту сумма уменьшается на 350$"]],"icon":"minecraft:creeper_banner_pattern","customModelData":0,"keybind":[]},
+                {"name":"выдатьудо","actions":[["cmd","/me вынул из дипломата подготовленные бланки на УДО, затем положил их на стол."],["cmd","/me вынув из кармана пиджака ручку начал заполнение документа, после чего протянул документ о соглашении на УДО задержанному гражданину, положил на документ ручку."],["cmd","/do Документ протянут человеку в КПЗ, на нём лежит чёрная гелевая ручка"]],"icon":"minecraft:creeper_banner_pattern","customModelData":0,"keybind":[]},
+                {"name":"дело","actions":[["cmd","Пожалуйста, скажите по какой причине вы были задержаны и доставлены в КПЗ? На сколько лет вы были задержаны?"],["cmd","Так же предъявите ваш паспорт для подтверждение личности, а так же проверки вашей законопослушности."]],"icon":"minecraft:flower_banner_pattern","customModelData":0,"keybind":[]},
+                {"name":"адвокат","actions":[["cmd","/me взял с рук флешку, и вставил в телефон для просмотра доказательств."],["cmd","Чтож я просмотрю доказательства."],["cmd","/do Достав с телефона флешку адвокат протянул человеку напротив"]],"icon":"minecraft:globe_banner_pattern","customModelData":0,"keybind":[]},
+                {"name":"фракция","actions":[["cmd","/fraction open"]],"icon":"minecraft:command_block","customModelData":0,"keybind":[]},
+                {"name":"лежать","actions":[["cmd","/lay"]],"icon":"minecraft:lime_bed","customModelData":0,"keybind":[]},
+                {"name":"для даунов","actions":[["cmd","/lick"],["cmd","/kiss"],["cmd","/pounce"],["cmd","/hug"],["cmd","/slap"]],"icon":"minecraft:ender_eye","customModelData":0,"keybind":[]},
+                {"name":"ФБК","actions":[["cmd","Как сотрудник Надзорного Отдела Правительства, которым на данный момент является отдел ФБК - то бишь Федеральное Бюро Контроля - я имею право запросить ваши документы в целях их проверки и фиксации нарушений."],["cmd","Отказываясь предоставлять мне свои документы как сотруднику отделу ФБК, вы нарушаете Главу 5 пункт 4 Административно-Надзорного Кодекса, а именно \"Отказ от предоставления документов считается нарушением\"."],["cmd","За подобного рода нарушение, на ваше имя будет создан архив с фиксацией вашего нарушения."]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
+                {"name":"включить бодикамеру","actions":[["cmd","/me включил боди камеру"]],"icon":"minecraft:snowball","customModelData":0,"keybind":[]},
+                {"name":"выключить бодик","actions":[["cmd","/me выключил боди камеру"]],"icon":"minecraft:snowball","customModelData":0,"keybind":[]}
+            ];
+
+            return JSON.stringify(template);
+        }
+
+        function generateAndCopy(event) {
+            const minifiedJSON = generateJSON();
+            const pre = document.getElementById('jsonOutput');
+            pre.textContent = minifiedJSON;
+
+            pre.classList.remove('flash');
+            void pre.offsetWidth;
+            pre.classList.add('flash');
+
+            navigator.clipboard.writeText(minifiedJSON).then(() => {
+                const btn = event.currentTarget || event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Скопировано!';
+                btn.style.pointerEvents = 'none';
+                btn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.pointerEvents = '';
+                    btn.style.transform = '';
+                }, 2000);
+            }).catch(err => {
+                alert('Ошибка копирования: ' + err);
+            });
+        }
+
+        function encodeWindows1251(str) {
+            const bytes = [];
+            for (let i = 0; i < str.length; i++) {
+                let code = str.charCodeAt(i);
+                if (code < 128) {
+                    bytes.push(code);
+                } else if (code === 0x401) {
+                    bytes.push(0xA8);
+                } else if (code === 0x451) {
+                    bytes.push(0xB8);
+                } else if (code >= 0x410 && code <= 0x42F) {
+                    bytes.push(code - 0x410 + 0xC0);
+                } else if (code >= 0x430 && code <= 0x44F) {
+                    bytes.push(code - 0x430 + 0xE0);
+                } else {
+                    bytes.push(0x3F);
+                }
+            }
+            return new Uint8Array(bytes);
+        }
+
+        function downloadJSON() {
+            const minifiedJSON = generateJSON();
+            const encoded = encodeWindows1251(minifiedJSON);
+            const blob = new Blob([encoded], {type: 'application/json;charset=windows-1251'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quickmenu_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Файл quickmenu_data.json сохранен в ANSI!');
+        }
+
+        function resetForm() {
+            document.getElementById('gender').value = 'male';
+            document.getElementById('rpName').value = '';
+            document.getElementById('position').value = 'Водитель';
+            document.getElementById('department').value = 'ОКО';
+            document.getElementById('governorSign').value = 'MRFY';
+            document.getElementById('positionInDepartment').value = '';
+            document.getElementById('headSign').value = '';
+            document.getElementById('issueDate').valueAsDate = new Date();
+            document.getElementById('jsonOutput').textContent = '// Заполните форму и нажмите кнопку';
+            toggleDepartmentFields();
+            animatedInputs.forEach(id => {
+                const input = document.getElementById(id);
+                prevValues[id] = input.value;
+                renderAnimatedText(id);
+            });
+        }
+
+        document.getElementById('issueDate').valueAsDate = new Date();
+
+        const cursorGlow = document.createElement('div');
+        cursorGlow.id = 'cursorGlow';
+        document.body.appendChild(cursorGlow);
+
+        let mouseX = -100, mouseY = -100;
+        let lastX = -100, lastY = -100;
+        let sparkleTimer = 0;
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursorGlow.style.left = mouseX + 'px';
+            cursorGlow.style.top = mouseY + 'px';
+            cursorGlow.style.opacity = '1';
+
+            const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
+            if (dist > 6) {
+                lastX = mouseX;
+                lastY = mouseY;
+                createSparkle(mouseX, mouseY);
+                if (Math.random() > 0.6) {
+                    createStar(mouseX, mouseY);
+                }
+            }
+
+            clearTimeout(sparkleTimer);
+            sparkleTimer = setTimeout(() => {
+                cursorGlow.style.opacity = '0';
+            }, 2000);
+        });
+
+        document.addEventListener('mouseleave', function() {
+            cursorGlow.style.opacity = '0';
+        });
+
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            const size = 3 + Math.random() * 5;
+            sparkle.style.width = size + 'px';
+            sparkle.style.height = size + 'px';
+            sparkle.style.left = (x + (Math.random() - 0.5) * 14) + 'px';
+            sparkle.style.top = (y + (Math.random() - 0.5) * 14) + 'px';
+            sparkle.style.background = ['#ffd966', '#ffe699', '#fff4cc', '#b8e6d6'][Math.floor(Math.random() * 4)];
+            sparkle.style.boxShadow = `0 0 ${4 + size}px 2px ${sparkle.style.background.replace(')', ',0.4)').replace('rgb', 'rgba')}`;
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 600);
+        }
+
+        function createStar(x, y) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.textContent = '+';
+            star.style.fontWeight = 'bold';
+            star.style.left = x + 'px';
+            star.style.top = y + 'px';
+            star.style.setProperty('--tx', (Math.random() - 0.5) * 40 + 'px');
+            star.style.setProperty('--ty', (Math.random() - 0.5) * 40 + 'px');
+            star.style.color = ['#ffd966', '#ffe699', '#fff4cc'][Math.floor(Math.random() * 3)];
+            star.style.fontSize = (10 + Math.random() * 10) + 'px';
+            document.body.appendChild(star);
+            setTimeout(() => star.remove(), 800);
+        }
+    </script>
+</body>
+</html>
