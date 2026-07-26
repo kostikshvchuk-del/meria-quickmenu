@@ -954,13 +954,16 @@
 
         function resetForm() {
             document.getElementById('gender').value = 'male';
-            document.getElementById('rpName').value = '';
+            document.getElementById('rpName').value = 'Криштиану Роналду';
             document.getElementById('position').value = 'Водитель';
             document.getElementById('department').value = 'ОКО';
             document.getElementById('governorSign').value = 'MRFY';
             document.getElementById('positionInDepartment').value = '';
             document.getElementById('headSign').value = '';
-            document.getElementById('issueDate').valueAsDate = new Date();
+        document.getElementById('issueDate').valueAsDate = new Date();
+        document.getElementById('rpName').value = 'Криштиану Роналду';
+        prevValues['rpName'] = 'Криштиану Роналду';
+        renderAnimatedText('rpName');
             document.getElementById('jsonOutput').textContent = '// Заполните форму и нажмите кнопку';
             toggleDepartmentFields();
             animatedInputs.forEach(id => {
