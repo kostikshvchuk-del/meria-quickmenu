@@ -688,6 +688,17 @@
             <div class="note">Никнейм или подпись губернатора</div>
         </div>
 
+        <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 18px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: rgba(184,230,214,0.7);">
+                <input type="radio" name="encoding" value="utf8" checked style="accent-color: #ffd966;">
+                UTF-8 (RPM лаунчер)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: rgba(184,230,214,0.7);">
+                <input type="radio" name="encoding" value="ansi" style="accent-color: #ffd966;">
+                ANSI (Prism и другие)
+            </label>
+        </div>
+
         <div class="btn-group">
             <button class="primary" onclick="generateAndCopy(event)">Сгенерировать и скопировать</button>
             <button class="success" onclick="downloadJSON()">Скачать quickmenu_data.json</button>
@@ -699,6 +710,7 @@
             <pre id="jsonOutput">// Заполните форму и нажмите кнопку</pre>
             <div class="info">
                 <strong>Инструкция:</strong> После генерации JSON автоматически скопируется в буфер обмена.<br>
+                Выберите кодировку выше: <strong>UTF-8</strong> для RPM лаунчера, <strong>ANSI</strong> для Prism и других.<br>
                 Вставьте содержимое в файл <strong>quickmenu_data.json</strong> в папке с клиентом Minecraft.
             </div>
         </div>
@@ -891,10 +903,20 @@
             return new Uint8Array(bytes);
         }
 
+        function getEncoding() {
+            return document.querySelector('input[name="encoding"]:checked').value;
+        }
+
         function downloadJSON() {
             const minifiedJSON = generateJSON();
-            const encoded = encodeWindows1251(minifiedJSON);
-            const blob = new Blob([encoded], {type: 'application/json;charset=windows-1251'});
+            const isUTF8 = getEncoding() === 'utf8';
+            let blob;
+            if (isUTF8) {
+                blob = new Blob([minifiedJSON], {type: 'application/json;charset=utf-8'});
+            } else {
+                const encoded = encodeWindows1251(minifiedJSON);
+                blob = new Blob([encoded], {type: 'application/json;charset=windows-1251'});
+            }
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -903,7 +925,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert('Файл quickmenu_data.json сохранен в ANSI!');
+            alert('Файл quickmenu_data.json сохранен в ' + (getEncoding() === 'utf8' ? 'UTF-8' : 'ANSI') + '!');
         }
 
         function resetForm() {
