@@ -974,6 +974,9 @@
         }
 
         document.getElementById('issueDate').valueAsDate = new Date();
+        document.getElementById('rpName').value = 'Криштиану Роналду';
+        prevValues['rpName'] = 'Криштиану Роналду';
+        renderAnimatedText('rpName');
 
         const cursorGlow = document.createElement('div');
         cursorGlow.id = 'cursorGlow';
