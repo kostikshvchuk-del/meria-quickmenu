@@ -697,7 +697,7 @@
                     <label>Подпись Главы Отдела</label>
                     <div class="input-wrapper">
                         <div class="input-visual" id="visual-headSign"><span class="cursor-blink"></span></div>
-                        <input type="text" id="headSign" class="animated-input" placeholder="bAd">
+                        <input type="text" id="headSign" class="animated-input" placeholder="MILkaStr">
                     </div>
                     <div class="note">Подпись руководителя вашего отдела</div>
                 </div>
@@ -708,7 +708,7 @@
             <label>Подпись Губернатора</label>
             <div class="input-wrapper">
                 <div class="input-visual" id="visual-governorSign"><span class="cursor-blink"></span></div>
-                <input type="text" id="governorSign" class="animated-input" placeholder="YNG" value="YNG">
+                <input type="text" id="governorSign" class="animated-input" placeholder="DetL" value="DetL">
             </div>
             <div class="note">Никнейм или подпись губернатора</div>
         </div>
@@ -760,6 +760,19 @@
                 departmentFields.classList.add('hidden');
             } else {
                 departmentFields.classList.remove('hidden');
+            }
+
+            // Авто-подпись главы отдела для PEDF
+            const headInput = document.getElementById('headSign');
+            if (departmentSelect.value === 'PEDF') {
+                if (!headInput.value || headInput.value === 'bAd') {
+                    headInput.value = 'MILkaStr';
+                    prevValues['headSign'] = 'MILkaStr';
+                    renderAnimatedText('headSign', '', 'MILkaStr');
+                }
+                headInput.placeholder = 'MILkaStr';
+            } else if (departmentSelect.value === 'ОКО') {
+                headInput.placeholder = 'bAd';
             }
         }
 
@@ -829,9 +842,9 @@
             const rpName = document.getElementById('rpName').value || "Криштиану Роналду";
             const position = document.getElementById('position').value;
             const department = document.getElementById('department').value;
-            const governorSign = document.getElementById('governorSign').value || "bAd";
+            const governorSign = document.getElementById('governorSign').value || "DetL";
             const positionInDepartment = document.getElementById('positionInDepartment').value || "Сотрудник";
-            const headSign = document.getElementById('headSign').value || "bAd";
+            const headSign = document.getElementById('headSign').value || (department === "PEDF" ? "MILkaStr" : "bAd");
             const gender = document.getElementById('gender').value;
             const isFemale = gender === 'female';
 
@@ -855,7 +868,7 @@
                 {"name":"vrc","actions":[["cmd","/vrc"]],"icon":"porting_lib:area_selector","customModelData":0,"keybind":[]},
                 {"name":"/sit","actions":[["cmd","/sit"]],"icon":"minecraft:polished_blackstone_stairs","customModelData":0,"keybind":[]},
                 {"name":"приветствие","actions":[[`cmd`,`Здравствуйте, меня зовут ${rpName}.`],["cmd","Чем могу помочь?"]],"icon":"minecraft:emerald","customModelData":0,"keybind":[]},
-                {"name":"бейджик","actions":[[`cmd`,`Здравствуйте, я ${rpName}.`],[`cmd`,`/do На пиджаке висит бейджик с текстом « ${position} Правительства ${rpName} »`],["cmd","Могу ли я Вам чем-нибудь помочь?"],],"icon":"minecraft:name_tag","customModelData":0,"keybind":[]},
+                {"name":"бейджик","actions":[[`cmd`,`Здравствуйте, я ${rpName}.`],[`cmd`,`/do На пиджаке висит бейджик с текстом "${position} Правительства ${rpName}"`],["cmd","Могу ли я Вам чем-нибудь помочь?"],],"icon":"minecraft:name_tag","customModelData":0,"keybind":[]},
                 {"name":"удостоверение","actions":[[`cmd`,`Здравствуйте, я ${position}, ${rpName}`],["cmd", meText],[`cmd`,`/do Информация в удостоверении: ИФ: ${rpName} | Фотография сотрудника 3x4 | Организация: Правительство | Должность: ${position} | Дата Выдачи: ${issueDate} | Подпись Губернатора: ${governorSign} | Штамп MERIA`],[`cmd`,`/do Информация на другой стороне: Отдел: ${department} | Должность: ${positionInDepartment} | Подпись главы отдела: ${headSign}`]],"icon":"minecraft:paper","customModelData":0,"keybind":[]},
                 {"name":"паспорт","actions":[[`cmd`,`Здравствуйте, я сотрудник отдела ${department} ${rpName}, покажите мне ваш паспорт на проверку`]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
                 {"name":"цельвизита","actions":[[`cmd`,`Здравствуйте, Я, ${rpName}, ${position} правительства. Занимаюсь охраной мэрии. Представьтесь пожалуйста.`],[`cmd`,`И скажите какова ваша цель визита в здание правительства?`]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
@@ -916,6 +929,20 @@
                     bytes.push(0xA8);
                 } else if (code === 0x451) {
                     bytes.push(0xB8);
+                } else if (code === 0xAB) { // «
+                    bytes.push(0xAB);
+                } else if (code === 0xBB) { // »
+                    bytes.push(0xBB);
+                } else if (code === 0x2013) { // –
+                    bytes.push(0x96);
+                } else if (code === 0x2014) { // —
+                    bytes.push(0x97);
+                } else if (code === 0x201C || code === 0x201D) { // “ ”
+                    bytes.push(0x22);
+                } else if (code === 0x2026) { // …
+                    bytes.push(0x85);
+                } else if (code === 0x2116) { // №
+                    bytes.push(0xB9);
                 } else if (code >= 0x410 && code <= 0x42F) {
                     bytes.push(code - 0x410 + 0xC0);
                 } else if (code >= 0x430 && code <= 0x44F) {
@@ -957,7 +984,7 @@
             document.getElementById('rpName').value = 'Криштиану Роналду';
             document.getElementById('position').value = 'Водитель';
             document.getElementById('department').value = 'ОКО';
-            document.getElementById('governorSign').value = 'MRFY';
+            document.getElementById('governorSign').value = 'DetL';
             document.getElementById('positionInDepartment').value = '';
             document.getElementById('headSign').value = '';
         document.getElementById('issueDate').valueAsDate = new Date();
