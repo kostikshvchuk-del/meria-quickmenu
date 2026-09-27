@@ -15,15 +15,17 @@
 
         #cursorGlow {
             position: fixed;
+            left: 0;
+            top: 0;
             pointer-events: none;
             z-index: 9999;
             width: 20px;
             height: 20px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(255,217,102,0.4), transparent 70%);
-            transform: translate(-50%, -50%);
-            transition: width 0.15s, height 0.15s, opacity 0.15s;
+            transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
             opacity: 0;
+            will-change: transform, opacity;
         }
 
         .sparkle {
@@ -34,7 +36,8 @@
             height: 6px;
             background: #ffd966;
             border-radius: 50%;
-            box-shadow: 0 0 6px 2px rgba(255,217,102,0.6);
+            opacity: 0.8;
+            will-change: transform, opacity;
             animation: sparkleFade 0.6s ease-out forwards;
         }
 
@@ -77,6 +80,7 @@
             filter: blur(80px);
             z-index: 0;
             pointer-events: none;
+            will-change: transform;
         }
 
         body::before {
@@ -175,13 +179,13 @@
             width: 100%;
             margin: 0 auto;
             background: rgba(13, 44, 44, 0.55);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
             border-radius: 28px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(42, 107, 107, 0.35);
-            animation: fadeInUp 0.7s ease-out, borderPulse 4s ease-in-out infinite 0.7s;
+            animation: fadeInUp 0.7s ease-out;
         }
 
         h1 {
@@ -195,7 +199,7 @@
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: fadeInUp 0.7s 0.1s ease-out both, glowPulse 3s ease-in-out infinite 0.8s, textShimmer 6s linear infinite 0.8s;
+            animation: fadeInUp 0.7s 0.1s ease-out both;
         }
 
         .subtitle {
@@ -204,7 +208,7 @@
             margin-bottom: 35px;
             font-size: 14px;
             letter-spacing: 1px;
-            animation: fadeInUp 0.7s 0.15s ease-out both, pulseOpacity 3s ease-in-out infinite 1s;
+            animation: fadeInUp 0.7s 0.15s ease-out both;
         }
 
         .row {
@@ -261,7 +265,7 @@
             content: '*';
             color: #ffd966; font-size: 18px;
             position: absolute; top: 8px; right: 12px;
-            opacity: 0.4; animation: pulseOpacity 2s ease-in-out infinite;
+            opacity: 0.4;
         }
         .form-group.important label {
             color: #ffe699;
@@ -278,7 +282,6 @@
             font-weight: 600;
             font-size: 13px;
             letter-spacing: 0.5px;
-            animation: pulseOpacity 4s ease-in-out infinite 0.5s;
         }
 
         .input-wrapper {
@@ -390,7 +393,6 @@
             background-position: right 14px center;
             padding-right: 40px;
             color: #e6f7f0;
-            animation: borderGlow 3s ease-in-out infinite;
         }
 
         select option {
@@ -472,7 +474,6 @@
             background: linear-gradient(135deg, #ffd966, #f0c040);
             color: #0a2a2a;
             box-shadow: 0 4px 20px rgba(255, 217, 102, 0.25);
-            animation: glowPulse 3s ease-in-out infinite 2s;
         }
 
         button.primary:hover {
@@ -526,7 +527,6 @@
             margin-bottom: 15px;
             font-size: 17px;
             letter-spacing: 0.5px;
-            animation: pulseOpacity 4s ease-in-out infinite 1.5s;
         }
 
         pre {
@@ -559,7 +559,6 @@
             color: #bdd4cc;
             border-left: 3px solid #ffd966;
             line-height: 1.5;
-            animation: borderGlow 3s ease-in-out infinite 2.5s;
         }
 
         .note {
@@ -567,7 +566,6 @@
             color: rgba(143, 187, 170, 0.65);
             margin-top: 6px;
             padding-left: 2px;
-            animation: pulseOpacity 5s ease-in-out infinite 1s;
         }
 
         .hidden {
@@ -586,7 +584,7 @@
         }
 
         .footer div {
-            animation: pulseOpacity 6s ease-in-out infinite 3s;
+            opacity: 0.9;
         }
 
         ::-webkit-scrollbar {
@@ -622,6 +620,19 @@
             h1 { font-size: 22px; letter-spacing: 1px; }
             button { min-width: 140px; padding: 12px 18px; font-size: 14px; }
             .btn-group { flex-direction: column; }
+            body::before, body::after { animation: none; }
+            .bg-gradient { animation: none; }
+            .container { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(13, 44, 44, 0.92); }
+        }
+
+        @media (hover: none), (pointer: coarse) {
+            #cursorGlow, .sparkle, .star { display: none !important; }
+            body::before, body::after { animation: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+            .bg-gradient { animation: none !important; }
         }
     </style>
 </head>
@@ -985,68 +996,77 @@
         renderAnimatedText('rpName');
         toggleDepartmentFields();
 
-        const cursorGlow = document.createElement('div');
-        cursorGlow.id = 'cursorGlow';
-        document.body.appendChild(cursorGlow);
+        // Легкий курсор-эффект: rAF-throttle, без layout-thrash, с лимитом частиц.
+        // На тачах и при prefers-reduced-motion полностью отключен (см. CSS).
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+        const fxEnabled = !reduceMotion && !coarsePointer;
+
+        let cursorGlow = null;
+        if (fxEnabled) {
+            cursorGlow = document.createElement('div');
+            cursorGlow.id = 'cursorGlow';
+            document.body.appendChild(cursorGlow);
+        }
 
         let mouseX = -100, mouseY = -100;
         let lastX = -100, lastY = -100;
-        let sparkleTimer = 0;
+        let glowVisible = false;
+        let glowTimer = 0;
+        let rafQueued = false;
 
-        document.addEventListener('mousemove', function(e) {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            cursorGlow.style.left = mouseX + 'px';
-            cursorGlow.style.top = mouseY + 'px';
-            cursorGlow.style.opacity = '1';
+        function hideGlow() {
+            glowVisible = false;
+            if (cursorGlow) cursorGlow.style.opacity = '0';
+        }
 
+        function flushCursor() {
+            rafQueued = false;
+            if (!fxEnabled || !cursorGlow) return;
+            cursorGlow.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+            if (!glowVisible) {
+                glowVisible = true;
+                cursorGlow.style.opacity = '1';
+            }
             const dist = Math.hypot(mouseX - lastX, mouseY - lastY);
-            if (dist > 6) {
+            if (dist > 28) {
                 lastX = mouseX;
                 lastY = mouseY;
                 createSparkle(mouseX, mouseY);
-                if (Math.random() > 0.6) {
-                    createStar(mouseX, mouseY);
-                }
             }
-
-            clearTimeout(sparkleTimer);
-            sparkleTimer = setTimeout(() => {
-                cursorGlow.style.opacity = '0';
-            }, 2000);
-        });
-
-        document.addEventListener('mouseleave', function() {
-            cursorGlow.style.opacity = '0';
-        });
-
-        function createSparkle(x, y) {
-            const sparkle = document.createElement('div');
-            sparkle.className = 'sparkle';
-            const size = 3 + Math.random() * 5;
-            sparkle.style.width = size + 'px';
-            sparkle.style.height = size + 'px';
-            sparkle.style.left = (x + (Math.random() - 0.5) * 14) + 'px';
-            sparkle.style.top = (y + (Math.random() - 0.5) * 14) + 'px';
-            sparkle.style.background = ['#ffd966', '#ffe699', '#fff4cc', '#b8e6d6'][Math.floor(Math.random() * 4)];
-            sparkle.style.boxShadow = `0 0 ${4 + size}px 2px ${sparkle.style.background.replace(')', ',0.4)').replace('rgb', 'rgba')}`;
-            document.body.appendChild(sparkle);
-            setTimeout(() => sparkle.remove(), 600);
+            clearTimeout(glowTimer);
+            glowTimer = setTimeout(hideGlow, 1200);
         }
 
-        function createStar(x, y) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            star.textContent = '+';
-            star.style.fontWeight = 'bold';
-            star.style.left = x + 'px';
-            star.style.top = y + 'px';
-            star.style.setProperty('--tx', (Math.random() - 0.5) * 40 + 'px');
-            star.style.setProperty('--ty', (Math.random() - 0.5) * 40 + 'px');
-            star.style.color = ['#ffd966', '#ffe699', '#fff4cc'][Math.floor(Math.random() * 3)];
-            star.style.fontSize = (10 + Math.random() * 10) + 'px';
-            document.body.appendChild(star);
-            setTimeout(() => star.remove(), 800);
+        if (fxEnabled) {
+            document.addEventListener('mousemove', function(e) {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                if (!rafQueued) {
+                    rafQueued = true;
+                    requestAnimationFrame(flushCursor);
+                }
+            }, { passive: true });
+
+            document.addEventListener('mouseleave', hideGlow);
+        }
+
+        let liveSparkles = 0;
+        function createSparkle(x, y) {
+            if (!fxEnabled || liveSparkles >= 20 || document.hidden) return;
+            liveSparkles++;
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            const size = 3 + Math.random() * 3;
+            sparkle.style.width = size + 'px';
+            sparkle.style.height = size + 'px';
+            sparkle.style.transform = `translate3d(${(x + (Math.random() - 0.5) * 12).toFixed(1)}px, ${(y + (Math.random() - 0.5) * 12).toFixed(1)}px, 0)`;
+            sparkle.style.background = '#ffd966';
+            document.body.appendChild(sparkle);
+            setTimeout(() => {
+                sparkle.remove();
+                liveSparkles--;
+            }, 600);
         }
     </script>
 </body>
