@@ -693,24 +693,7 @@
                     </div>
                     <div class="note">Ваша должность внутри отдела</div>
                 </div>
-                <div class="form-group">
-                    <label>Подпись Главы Отдела</label>
-                    <div class="input-wrapper">
-                        <div class="input-visual" id="visual-headSign"><span class="cursor-blink"></span></div>
-                        <input type="text" id="headSign" class="animated-input" placeholder="MILkaStr">
-                    </div>
-                    <div class="note">Подпись руководителя вашего отдела</div>
-                </div>
             </div>
-        </div>
-
-        <div class="form-group">
-            <label>Подпись Губернатора</label>
-            <div class="input-wrapper">
-                <div class="input-visual" id="visual-governorSign"><span class="cursor-blink"></span></div>
-                <input type="text" id="governorSign" class="animated-input" placeholder="DetL" value="DetL">
-            </div>
-            <div class="note">Никнейм или подпись губернатора</div>
         </div>
 
         <div style="display: flex; justify-content: center; margin-bottom: 18px;">
@@ -761,25 +744,11 @@
             } else {
                 departmentFields.classList.remove('hidden');
             }
-
-            // Авто-подпись главы отдела для PEDF
-            const headInput = document.getElementById('headSign');
-            if (departmentSelect.value === 'PEDF') {
-                if (!headInput.value || headInput.value === 'bAd') {
-                    headInput.value = 'MILkaStr';
-                    prevValues['headSign'] = 'MILkaStr';
-                    renderAnimatedText('headSign', '', 'MILkaStr');
-                }
-                headInput.placeholder = 'MILkaStr';
-            } else if (departmentSelect.value === 'ОКО') {
-                headInput.placeholder = 'bAd';
-            }
         }
 
         departmentSelect.addEventListener('change', toggleDepartmentFields);
-        toggleDepartmentFields();
 
-        const animatedInputs = ['rpName', 'positionInDepartment', 'headSign', 'governorSign'];
+        const animatedInputs = ['rpName', 'positionInDepartment'];
         const prevValues = {};
 
         function renderAnimatedText(inputId, oldText, newText) {
@@ -842,9 +811,7 @@
             const rpName = document.getElementById('rpName').value || "Криштиану Роналду";
             const position = document.getElementById('position').value;
             const department = document.getElementById('department').value;
-            const governorSign = document.getElementById('governorSign').value || "DetL";
             const positionInDepartment = document.getElementById('positionInDepartment').value || "Сотрудник";
-            const headSign = document.getElementById('headSign').value || (department === "PEDF" ? "MILkaStr" : "bAd");
             const gender = document.getElementById('gender').value;
             const isFemale = gender === 'female';
 
@@ -852,7 +819,7 @@
 
             const meText = meLine(
                 "/me достав удостоверение из внутреннего кармана пиджака, продемонстрировал его человеку напротив, убедившись что человек напротив изучил информацию убрал его обратно в нагрудный карман.",
-                "/me достав удостоверение из внутреннего кармана пиджака, продемонстрировала его человеку напротив, убедившись что человек напротив изучил информацию убрала его обратно в нагрудный карман."
+                "/me достав удостоверение из внутреннего кармана пиджака, продемонстрировала его человеку напротив, убедившись что человек напротив изучил информацию, убрала его обратно в нагрудный карман."
             );
 
             const issueDateRaw = document.getElementById('issueDate').value;
@@ -864,13 +831,27 @@
                 issueDate = issueDateRaw.split('-').reverse().join('.');
             }
 
+            // Глава V, статья 2: ИФ, фото, организация, должность, дата, печать + отдел/должность в отделе (если есть)
+            const udoActions = [
+                [`cmd`, `Здравствуйте, я ${position}, ${rpName}`],
+                ["cmd", meText],
+                [`cmd`, `/do Информация в удостоверении: ИФ: ${rpName} | Фотография сотрудника 3x4 | Организация: Правительство | Должность: ${position} | Дата Выдачи: ${issueDate} | Печать MERIA`]
+            ];
+            if (department !== 'Отсутствует') {
+                udoActions.push([`cmd`, `/do Информация на другой стороне: Отдел: ${department} | Должность: ${positionInDepartment}`]);
+            }
+
+            const passportGreet = department !== 'Отсутствует'
+                ? `Здравствуйте, я сотрудник отдела ${department} ${rpName}, покажите мне ваш паспорт на проверку`
+                : `Здравствуйте, я ${position} ${rpName}, покажите мне ваш паспорт на проверку`;
+
             let template = [
                 {"name":"vrc","actions":[["cmd","/vrc"]],"icon":"porting_lib:area_selector","customModelData":0,"keybind":[]},
                 {"name":"/sit","actions":[["cmd","/sit"]],"icon":"minecraft:polished_blackstone_stairs","customModelData":0,"keybind":[]},
                 {"name":"приветствие","actions":[[`cmd`,`Здравствуйте, меня зовут ${rpName}.`],["cmd","Чем могу помочь?"]],"icon":"minecraft:emerald","customModelData":0,"keybind":[]},
                 {"name":"бейджик","actions":[[`cmd`,`Здравствуйте, я ${rpName}.`],[`cmd`,`/do На пиджаке висит бейджик с текстом "${position} Правительства ${rpName}"`],["cmd","Могу ли я Вам чем-нибудь помочь?"],],"icon":"minecraft:name_tag","customModelData":0,"keybind":[]},
-                {"name":"удостоверение","actions":[[`cmd`,`Здравствуйте, я ${position}, ${rpName}`],["cmd", meText],[`cmd`,`/do Информация в удостоверении: ИФ: ${rpName} | Фотография сотрудника 3x4 | Организация: Правительство | Должность: ${position} | Дата Выдачи: ${issueDate} | Подпись Губернатора: ${governorSign} | Штамп MERIA`],[`cmd`,`/do Информация на другой стороне: Отдел: ${department} | Должность: ${positionInDepartment} | Подпись главы отдела: ${headSign}`]],"icon":"minecraft:paper","customModelData":0,"keybind":[]},
-                {"name":"паспорт","actions":[[`cmd`,`Здравствуйте, я сотрудник отдела ${department} ${rpName}, покажите мне ваш паспорт на проверку`]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
+                {"name":"удостоверение","actions":udoActions,"icon":"minecraft:paper","customModelData":0,"keybind":[]},
+                {"name":"паспорт","actions":[["cmd",passportGreet]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
                 {"name":"цельвизита","actions":[[`cmd`,`Здравствуйте, Я, ${rpName}, ${position} правительства. Занимаюсь охраной мэрии. Представьтесь пожалуйста.`],[`cmd`,`И скажите какова ваша цель визита в здание правительства?`]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
                 {"name":"документы","actions":[["cmd","Предъявите пожалуйста на проверку ваш паспорт."]],"icon":"minecraft:golden_helmet","customModelData":0,"keybind":[]},
                 {"name":"сила","actions":[[`cmd`, meLine("Извините, но я обязан применить силу.", "Извините, но я обязана применить силу.")],["cmd", meLine("/me быстро подойдя к человеку начал его захват. Быстрыми и тактичными действиями скручивает человека.", "/me быстро подойдя к человеку начала его захват. Быстрыми и тактичными действиями скручивает человека.")],["cmd","/do Человек на полу. Руки гражданина зафиксированы за спиной"]],"icon":"minecraft:shield","customModelData":0,"keybind":[]},
@@ -984,9 +965,7 @@
             document.getElementById('rpName').value = 'Криштиану Роналду';
             document.getElementById('position').value = 'Водитель';
             document.getElementById('department').value = 'ОКО';
-            document.getElementById('governorSign').value = 'DetL';
             document.getElementById('positionInDepartment').value = '';
-            document.getElementById('headSign').value = '';
         document.getElementById('issueDate').valueAsDate = new Date();
         document.getElementById('rpName').value = 'Криштиану Роналду';
         prevValues['rpName'] = 'Криштиану Роналду';
@@ -1004,6 +983,7 @@
         document.getElementById('rpName').value = 'Криштиану Роналду';
         prevValues['rpName'] = 'Криштиану Роналду';
         renderAnimatedText('rpName');
+        toggleDepartmentFields();
 
         const cursorGlow = document.createElement('div');
         cursorGlow.id = 'cursorGlow';
